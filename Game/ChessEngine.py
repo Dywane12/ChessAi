@@ -36,7 +36,8 @@ class GameState:
 
         #pawn promotion
         if move.isPawnPromotion:
-            self.board[move.endRow][move.endCol] = move.pieceMoved[0] + 'Q'
+            promotedPiece =  input("Promote to Q, R, B or N: ")
+            self.board[move.endRow][move.endCol] = move.pieceMoved[0] + promotedPiece.upper()
 
         #enpassant
         if move.isEnpassantMove:
@@ -211,45 +212,40 @@ class GameState:
                 break
 
         if self.whiteToMove:
-            if self.board[row-1][col] == "--":
-                if not piecePinned or pinDirection == (-1, 0):
-                    moves.append(Move((row, col), (row-1, col), self.board))
-                    if row == 6 and self.board[row-2][col] == "--":
-                        moves.append(Move((row, col), (row-2, col), self.board))
-            if col-1 >= 0:
-                if self.board[row-1][col-1][0] == 'b':
-                    if not piecePinned or pinDirection == (-1, -1):
-                        moves.append(Move((row, col), (row-1, col-1), self.board))
-                elif (row-1, col-1) == self.enpassantPossible:
-                    if not piecePinned or pinDirection == (-1, -1):
-                        moves.append(Move((row, col), (row - 1, col - 1), self.board, isEnpassantMove=True))
-            if col+1 <= 7:
-                if self.board[row-1][col+1][0] == 'b':
-                    if not piecePinned or pinDirection == (-1, 1):
-                        moves.append(Move((row, col), (row-1, col+1), self.board))
-                elif (row-1, col+1) == self.enpassantPossible:
-                    if not piecePinned or pinDirection == (-1, 1):
-                        moves.append(Move((row, col), (row - 1, col + 1), self.board, isEnpassantMove=True))
+            moveAmount = -1
+            startRow = 6
+            backRow = 0
+            enemyColor = 'b'
         else:
-            if self.board[row+1][col] == "--":
-                if not piecePinned or pinDirection == (1, 0):
-                    moves.append(Move((row, col), (row+1, col), self.board))
-                    if row == 1 and self.board[row+2][col] == "--":
-                        moves.append(Move((row, col), (row+2, col), self.board))
-            if col-1 >= 0:
-                if self.board[row+1][col-1][0] == 'w':
-                    if not piecePinned or pinDirection == (1, -1):
-                        moves.append(Move((row, col), (row+1, col-1), self.board))
-                elif (row+1, col-1) == self.enpassantPossible:
-                    if not piecePinned or pinDirection == (1, -1):
-                        moves.append(Move((row, col), (row + 1, col - 1), self.board, isEnpassantMove=True))
-            if col+1 <= 7:
-                if self.board[row+1][col+1][0] == 'w':
-                    if not piecePinned or pinDirection == (1, 1):
-                        moves.append(Move((row, col), (row+1, col+1), self.board))
-                elif (row+1, col+1) == self.enpassantPossible:
-                    if not piecePinned or pinDirection == (1, 1):
-                        moves.append(Move((row, col), (row + 1, col + 1), self.board, isEnpassantMove=True))
+            moveAmount = 1
+            startRow = 1
+            backRow = 7
+            enemyColor = 'w'
+        pawnPromotion = False
+
+        if self.board[row + moveAmount][col] == "--":
+            if not piecePinned or pinDirection == (moveAmount, 0):
+                if row + moveAmount == backRow:
+                    pawnPromotion = True
+                moves.append(Move((row, col), (row+moveAmount, col), self.board, isPawnPromotion=pawnPromotion))
+                if row == startRow and self.board[row + 2 * moveAmount][col] == "--":
+                    moves.append(Move((row, col), (row + 2 * moveAmount, col), self.board))
+        if col-1 >= 0: #capture to left
+            if not piecePinned or pinDirection == (moveAmount, -1):
+                if self.board[row + moveAmount][col - 1][0] == enemyColor:
+                    if row + moveAmount == backRow:
+                        pawnPromotion = True
+                    moves.append(Move((row, col), (row + moveAmount, col - 1), self.board, isPawnPromotion=pawnPromotion))
+                if (row + moveAmount, col - 1) == self.enpassantPossible:
+                    moves.append(Move((row, col), (row + moveAmount, col - 1), self.board, isEnpassantMove=True))
+        if col + 1 <= 7: #capture to right
+            if not piecePinned or pinDirection == (moveAmount, 1):
+                if self.board[row + moveAmount][col + 1][0] == enemyColor:
+                    if row + moveAmount == backRow:
+                        pawnPromotion = True
+                    moves.append(Move((row, col), (row + moveAmount, col + 1), self.board, isPawnPromotion=pawnPromotion))
+                if (row + moveAmount, col + 1) == self.enpassantPossible:
+                    moves.append(Move((row, col), (row + moveAmount, col + 1), self.board, isEnpassantMove=True))
 
 
     def getRookMoves(self, row, col, moves):
@@ -377,14 +373,14 @@ class Move:
     }
     colsToFiles = {v: k for k, v in filesToCols.items()}
 
-    def __init__(self, startSquare, endSquare, board, isEnpassantMove = False):
+    def __init__(self, startSquare, endSquare, board, isEnpassantMove = False, isPawnPromotion = False):
         self.startRow = startSquare[0]
         self.startCol = startSquare[1]
         self.endRow = endSquare[0]
         self.endCol = endSquare[1]
         self.pieceMoved = board[self.startRow][self.startCol]
         self.pieceCaptured = board[self.endRow][self.endCol]
-        self.isPawnPromotion = (self.pieceMoved == 'wp' and self.endRow == 0) or (self.pieceMoved == 'bp' and self.endRow == 7)
+        self.isPawnPromotion = isPawnPromotion
         self.isEnpassantMove = isEnpassantMove
         if self.isEnpassantMove:
             self.pieceCaptured = 'wp' if self.pieceMoved == 'bp' else 'bp'
