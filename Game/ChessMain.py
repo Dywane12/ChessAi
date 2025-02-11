@@ -1,5 +1,5 @@
 import pygame as p
-import ChessEngine
+import ChessEngine, AIEngine
 
 WIDTH = HEIGHT = 512
 DIMENSION = 8
@@ -28,22 +28,26 @@ def main():
     sqSelected = () #no square is selected, keep track of the last click of the used (tuple: (row, col))
     playerClicks = [] #keep track of player clicks (two tuples [(6, 4), (4, 4)]
     gameOver = False
+    playerOne = True #if a human is playing white, then this will be True. If an AI is playing, then False
+    playerTwo = False #same as above, but for black
     while running:
+        humanTurn = (gs.whiteToMove and playerOne) or (not gs.whiteToMove and playerTwo)
         for event in p.event.get():
             if event.type == p.QUIT:
                 running = False
+            #mouse handler
             elif event.type == p.MOUSEBUTTONDOWN:
-                if not gameOver:
-                    location = p.mouse.get_pos()
+                if not gameOver and humanTurn:
+                    location = p.mouse.get_pos() #(x, y) location of mouse
                     col = location[0] // SQ_SIZE
                     row = location[1] // SQ_SIZE
-                    if sqSelected == (row, col):
-                        sqSelected = ()
-                        playerClicks = []
+                    if sqSelected == (row, col): #the user clicked the same square twice
+                        sqSelected = () #deselect
+                        playerClicks = [] #clear player clicks
                     else:
                         sqSelected = (row, col)
-                        playerClicks.append(sqSelected)
-                    if len(playerClicks) == 2:
+                        playerClicks.append(sqSelected) #append for both 1st and 2nd clicks
+                    if len(playerClicks) == 2: #after 2nd click
                         move = ChessEngine.Move(playerClicks[0], playerClicks[1], gs.board)
                         print(move.getChessNotation())
                         for i in range(len(validMoves)):
@@ -51,10 +55,11 @@ def main():
                                 gs.makeMove(validMoves[i])
                                 moveMade = True
                                 animate = True
-                                sqSelected = ()
+                                sqSelected = () #reset user clicks
                                 playerClicks = []
                         if not moveMade:
                             playerClicks = [sqSelected]
+            #key handlers
             elif event.type == p.KEYDOWN:
                 if event.key == p.K_z: #undo then 'z' is pressed
                     gs.undoMove()
@@ -67,6 +72,13 @@ def main():
                     playerClicks = []
                     moveMade = False
                     animate = False
+
+        #AI move finder
+        if not gameOver and not humanTurn:
+            AIMove = AIEngine.findRandomMove(validMoves)
+            gs.makeMove(AIMove)
+            moveMade = True
+            animate = True
 
         if moveMade:
             if animate:
