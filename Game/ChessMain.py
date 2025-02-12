@@ -28,8 +28,8 @@ def main():
     sqSelected = () #no square is selected, keep track of the last click of the used (tuple: (row, col))
     playerClicks = [] #keep track of player clicks (two tuples [(6, 4), (4, 4)]
     gameOver = False
-    playerOne = True #if a human is playing white, then this will be True. If an AI is playing, then False
-    playerTwo = False #same as above, but for black
+    playerOne = False #if a human is playing white, then this will be True. If an AI is playing, then False
+    playerTwo = True #same as above, but for black
     while running:
         humanTurn = (gs.whiteToMove and playerOne) or (not gs.whiteToMove and playerTwo)
         for event in p.event.get():
@@ -90,8 +90,18 @@ def main():
             # if AIMove is None:
             #     AIMove = AIEngine.findRandomMove(validMoves)
 
-            '''MinMax algorith with recursion'''
-            AIMove = AIEngine.findBestMoveMinMax(gs, validMoves)
+            '''MinMax algorithm with recursion'''
+            # AIMove = AIEngine.findBestMoveMinMax(gs, validMoves)
+            # if AIMove is None:
+            #     AIMove = AIEngine.findRandomMove(validMoves)
+
+            '''Nega Max algorithm without Alpha Beta Pruning'''
+            # AIMove = AIEngine.findBestMoveNegaMax(gs, validMoves)
+            # if AIMove is None:
+            #     AIMove = AIEngine.findRandomMove(validMoves)
+
+            '''Nega Max algorithm with Alpha Beta Pruning'''
+            AIMove = AIEngine.findBestMoveNegaMaxAlphaBeta(gs, validMoves)
             if AIMove is None:
                 AIMove = AIEngine.findRandomMove(validMoves)
             gs.makeMove(AIMove)

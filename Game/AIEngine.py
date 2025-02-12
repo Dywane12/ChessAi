@@ -3,7 +3,7 @@ import random
 pieceScores = {"K": 0, "Q": 9, "R": 5, "B": 3, "N": 3, "p": 1}
 CHECKMATE = 1000
 STALEMATE = 0
-DEPTH = 3
+DEPTH = 4
 
 '''
 Picks and returns a random move
@@ -73,11 +73,12 @@ def minMaxNoRecursion(gs, validMoves):
 
 
 '''
-Helper for minMaxRecursion, it returns nextMove
+Helper for MinMax with recursion, it returns nextMove
 '''
 def findBestMoveMinMax(gs, validMoves):
     global nextMove
     nextMove = None
+    random.shuffle(validMoves)
     minMaxRecursion(gs, validMoves, DEPTH, gs.whiteToMove)
     return nextMove
 
@@ -118,7 +119,83 @@ def minMaxRecursion(gs, validMoves, depth, whiteToMove):
 
 
 '''
-Better score algorithm
+Helper for Nega Max without Alpha Beta Pruning, it returns nextMove
+'''
+def findBestMoveNegaMax(gs, validMoves):
+    global nextMove, counter
+    nextMove = None
+    random.shuffle(validMoves)
+    counter = 0
+    negaMax(gs, validMoves, DEPTH, 1 if gs.whiteToMove else -1)
+    print(counter)
+    return nextMove
+
+
+'''
+Nega Max algorithm without Alpha Beta Pruning
+'''
+def negaMax(gs, validMoves, depth, turnMultiplier):
+    global nextMove, counter
+    counter += 1
+    if depth == 0:
+        return turnMultiplier * scoreBoard(gs)
+
+    maxScore = -CHECKMATE
+    for move in validMoves:
+        gs.makeMove(move)
+        nextMoves = gs.getValidMoves()
+        score = -negaMax(gs, nextMoves, depth - 1, -turnMultiplier)
+        if score > maxScore:
+            maxScore = score
+            if depth == DEPTH:
+                nextMove = move
+        gs.undoMove()
+    return maxScore
+
+
+'''
+Helper for Nega Max with Alpha Beta Pruning, it returns nextMove
+'''
+def findBestMoveNegaMaxAlphaBeta(gs, validMoves):
+    global nextMove, counter
+    nextMove = None
+    random.shuffle(validMoves)
+    counter = 0
+    negaMaxAlphaBeta(gs, validMoves, DEPTH, -CHECKMATE, CHECKMATE, 1 if gs.whiteToMove else -1)
+    print(counter)
+    return nextMove
+
+
+'''
+Nega Max algorithm with Alpha Beta Pruning
+'''
+def negaMaxAlphaBeta(gs, validMoves, depth, alpha, beta, turnMultiplier):
+    global nextMove, counter
+    counter += 1
+    if depth == 0:
+        return turnMultiplier * scoreBoard(gs)
+
+    #move ordering - implement later
+    maxScore = -CHECKMATE
+    for move in validMoves:
+        gs.makeMove(move)
+        nextMoves = gs.getValidMoves()
+        score = -negaMaxAlphaBeta(gs, nextMoves, depth - 1, -beta, -alpha, -turnMultiplier)
+        if score > maxScore:
+            maxScore = score
+            if depth == DEPTH:
+                nextMove = move
+        gs.undoMove()
+        if maxScore > alpha: #pruning happens
+            alpha = maxScore
+        if alpha >= beta:
+            break
+    return maxScore
+
+
+'''
+Better score algorithm 
+(used in MinMax with recursion)
 Positive score is good for white
 Negative score is good for black
 '''
@@ -142,7 +219,8 @@ def scoreBoard(gs):
 
 
 '''
-Score the board based on material
+Score the board based on material 
+(used in Greedy algorithm and MinMax without recursion)
 '''
 def scoreMaterial(board):
     score = 0
