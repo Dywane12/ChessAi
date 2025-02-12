@@ -143,7 +143,7 @@ class GameState:
             if move.endRow == 0:
                 if move.endCol == 0:
                     self.currentCastlingRights.bqs = False
-                elif move.endCOl == 7:
+                elif move.endCol == 7:
                     self.currentCastlingRights.bks = False
 
 
@@ -493,6 +493,7 @@ class Move:
         if self.isEnpassantMove:
             self.pieceCaptured = 'wp' if self.pieceMoved == 'bp' else 'bp'
         self.isCastleMove = isCastleMove
+        self.isCapture = self.pieceCaptured != '--'
         self.moveId = self.startRow * 1000 + self.startCol * 100 + self.endRow * 10 + self.endCol
 
 
@@ -508,3 +509,25 @@ class Move:
 
     def getRankFile(self, row, column):
         return self.colsToFiles[column] + self.rowsToRanks[row]
+
+
+    def __str__(self):
+        #castle move
+        if self.isCastleMove:
+            return "O-O" if self.endCol == 6 else "O-O-O"
+
+        endSquare = self.getRankFile(self.endRow, self.endCol)
+
+        #pawn moves
+        if self.pieceMoved[1] == 'p':
+            if self.isCapture:
+                return self.colsToFiles[self.startCol] + "x" + endSquare
+            else:
+                return endSquare
+            #pawn promotions later
+
+        #piece moves
+        moveString = self.pieceMoved[1]
+        if self.isCapture:
+            moveString += 'x'
+        return moveString + endSquare

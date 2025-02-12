@@ -122,12 +122,10 @@ def minMaxRecursion(gs, validMoves, depth, whiteToMove):
 Helper for Nega Max without Alpha Beta Pruning, it returns nextMove
 '''
 def findBestMoveNegaMax(gs, validMoves):
-    global nextMove, counter
+    global nextMove
     nextMove = None
     random.shuffle(validMoves)
-    counter = 0
     negaMax(gs, validMoves, DEPTH, 1 if gs.whiteToMove else -1)
-    print(counter)
     return nextMove
 
 
@@ -135,8 +133,7 @@ def findBestMoveNegaMax(gs, validMoves):
 Nega Max algorithm without Alpha Beta Pruning
 '''
 def negaMax(gs, validMoves, depth, turnMultiplier):
-    global nextMove, counter
-    counter += 1
+    global nextMove
     if depth == 0:
         return turnMultiplier * scoreBoard(gs)
 
@@ -157,12 +154,10 @@ def negaMax(gs, validMoves, depth, turnMultiplier):
 Helper for Nega Max with Alpha Beta Pruning, it returns nextMove
 '''
 def findBestMoveNegaMaxAlphaBeta(gs, validMoves):
-    global nextMove, counter
+    global nextMove
     nextMove = None
     random.shuffle(validMoves)
-    counter = 0
     negaMaxAlphaBeta(gs, validMoves, DEPTH, -CHECKMATE, CHECKMATE, 1 if gs.whiteToMove else -1)
-    print(counter)
     return nextMove
 
 
@@ -170,8 +165,7 @@ def findBestMoveNegaMaxAlphaBeta(gs, validMoves):
 Nega Max algorithm with Alpha Beta Pruning
 '''
 def negaMaxAlphaBeta(gs, validMoves, depth, alpha, beta, turnMultiplier):
-    global nextMove, counter
-    counter += 1
+    global nextMove
     if depth == 0:
         return turnMultiplier * scoreBoard(gs)
 
