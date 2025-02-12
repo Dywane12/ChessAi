@@ -22,6 +22,7 @@ class GameState:
         self.pins = []
         self.checks = []
         self.enpassantPossible = () #coordinates or the square where en-passant is possible
+        self.enpassantPossibleLog = [self.enpassantPossible]
         self.currentCastlingRights = CastleRights(True, True, True, True)
         self.castleRightsLog = [CastleRights(self.currentCastlingRights.wks, self.currentCastlingRights.bks,
                                              self.currentCastlingRights.wqs, self.currentCastlingRights.bqs)]
@@ -62,6 +63,8 @@ class GameState:
                 self.board[move.endRow][move.endCol+1] = self.board[move.endRow][move.endCol-2] #moves the rook
                 self.board[move.endRow][move.endCol-2] = '--' #erase the old rook
 
+        self.enpassantPossibleLog.append(self.enpassantPossible)
+
         #update castling rights
         self.updateCastleRights(move)
         self.castleRightsLog.append(CastleRights(self.currentCastlingRights.wks, self.currentCastlingRights.bks,
@@ -72,9 +75,11 @@ class GameState:
     def undoMove(self):
         if len(self.moveLog) != 0:
             move = self.moveLog.pop()
-            self.board[move.startRow][move.startCol] = move.pieceMoved
-            self.board[move.endRow][move.endCol] = move.pieceCaptured
-            self.whiteToMove = not self.whiteToMove
+            self.board[move.startRow][move.startCol] = move.pieceMoved #put piece on starting square
+            self.board[move.endRow][move.endCol] = move.pieceCaptured #put back captured piece
+            self.whiteToMove = not self.whiteToMove #switch turns back
+
+            #update king's location
             if move.pieceMoved == 'wK':
                 self.whiteKingLocation = (move.startRow, move.startCol)
             elif move.pieceMoved == 'bK':
@@ -85,11 +90,9 @@ class GameState:
                 #leave landing square blank
                 self.board[move.endRow][move.endCol] = '--'
                 self.board[move.startRow][move.endCol] = move.pieceCaptured
-                self.enpassantPossible = (move.endRow, move.endCol)
 
-            #undo a 2 square pawn advance
-            if move.pieceMoved[1] == 'p' and abs(move.startRow - move.endRow) == 2:
-                self.enpassantPossible = ()
+            self.enpassantPossibleLog.pop()
+            self.enpassantPossible = self.enpassantPossibleLog[-1]
 
             #undo castling rights
             self.castleRightsLog.pop()
@@ -127,6 +130,20 @@ class GameState:
                 if move.startCol == 0: #left rook
                     self.currentCastlingRights.bqs = False
                 elif move.startCol == 7: #right rook
+                    self.currentCastlingRights.bks = False
+
+        #if a rook is captured
+        if move.pieceCaptured == 'wR':
+            if move.endRow == 7:
+                if move.endCol == 0:
+                    self.currentCastlingRights.wqs = False
+                elif move.endCol == 7:
+                    self.currentCastlingRights.wks = False
+        elif move.pieceCaptured == 'bR':
+            if move.endRow == 0:
+                if move.endCol == 0:
+                    self.currentCastlingRights.bqs = False
+                elif move.endCOl == 7:
                     self.currentCastlingRights.bks = False
 
 
