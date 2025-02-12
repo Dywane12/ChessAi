@@ -65,6 +65,7 @@ def main():
                     gs.undoMove()
                     moveMade = True
                     animate = False
+                    gameOver = False
                 if event.key == p.K_r: #reset the board when 'r' is pressed
                     gs = ChessEngine.GameState()
                     validMoves = gs.getValidMoves()
@@ -72,6 +73,7 @@ def main():
                     playerClicks = []
                     moveMade = False
                     animate = False
+                    gameOver = False
 
         #AI move finder
         if not gameOver and not humanTurn:
@@ -84,7 +86,12 @@ def main():
             #     AIMove = AIEngine.findRandomMove(validMoves)
 
             '''MinMax algorithm no recursion (two moves ahead)'''
-            AIMove = AIEngine.minMaxNoRecursion(gs, validMoves)
+            # AIMove = AIEngine.minMaxNoRecursion(gs, validMoves)
+            # if AIMove is None:
+            #     AIMove = AIEngine.findRandomMove(validMoves)
+
+            '''MinMax algorith with recursion'''
+            AIMove = AIEngine.findBestMoveMinMax(gs, validMoves)
             if AIMove is None:
                 AIMove = AIEngine.findRandomMove(validMoves)
             gs.makeMove(AIMove)

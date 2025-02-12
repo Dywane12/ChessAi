@@ -3,6 +3,7 @@ import random
 pieceScores = {"K": 0, "Q": 9, "R": 5, "B": 3, "N": 3, "p": 1}
 CHECKMATE = 1000
 STALEMATE = 0
+DEPTH = 3
 
 '''
 Picks and returns a random move
@@ -46,18 +47,24 @@ def minMaxNoRecursion(gs, validMoves):
     for playerMove in validMoves:
         gs.makeMove(playerMove)
         opponentMoves = gs.getValidMoves()
-        opponentMaxScore = -CHECKMATE
-        for opponentMove in opponentMoves:
-            gs.makeMove(opponentMove)
-            if gs.checkmate:
-                score = -turnMultiplier * CHECKMATE
-            elif gs.stalemate:
-                score = STALEMATE
-            else:
-                score = -turnMultiplier * scoreMaterial(gs.board)
-            if score > opponentMaxScore:
-                opponentMaxScore = score
-            gs.undoMove()
+        if gs.stalemate:
+            opponentMaxScore = STALEMATE
+        elif gs.checkmate:
+            opponentMaxScore = -CHECKMATE
+        else:
+            opponentMaxScore = -CHECKMATE
+            for opponentMove in opponentMoves:
+                gs.makeMove(opponentMove)
+                gs.getValidMoves()
+                if gs.checkmate:
+                    score = CHECKMATE
+                elif gs.stalemate:
+                    score = STALEMATE
+                else:
+                    score = -turnMultiplier * scoreMaterial(gs.board)
+                if score > opponentMaxScore:
+                    opponentMaxScore = score
+                gs.undoMove()
         if opponentMaxScore < opponentMinMaxScore:
             opponentMinMaxScore = opponentMaxScore
             bestPlayerMove = playerMove
@@ -65,6 +72,73 @@ def minMaxNoRecursion(gs, validMoves):
     return bestPlayerMove
 
 
+'''
+Helper for minMaxRecursion, it returns nextMove
+'''
+def findBestMoveMinMax(gs, validMoves):
+    global nextMove
+    nextMove = None
+    minMaxRecursion(gs, validMoves, DEPTH, gs.whiteToMove)
+    return nextMove
+
+
+'''
+MinMax algorithm recursively
+'''
+def minMaxRecursion(gs, validMoves, depth, whiteToMove):
+    global nextMove
+    if depth == 0:
+        return scoreMaterial(gs.board)
+
+    if whiteToMove:
+        maxScore = -CHECKMATE
+        for move in validMoves:
+            gs.makeMove(move)
+            nextMoves = gs.getValidMoves()
+            score = minMaxRecursion(gs, nextMoves, depth - 1, False)
+            if score > maxScore:
+                maxScore = score
+                if depth == DEPTH:
+                    nextMove = move
+            gs.undoMove()
+        return maxScore
+
+    else:
+        minScore = CHECKMATE
+        for move in validMoves:
+            gs.makeMove(move)
+            nextMoves = gs.getValidMoves()
+            score = minMaxRecursion(gs, nextMoves, depth - 1, True)
+            if score < minScore:
+                minScore = score
+                if depth == DEPTH:
+                    nextMove = move
+            gs.undoMove()
+        return minScore
+
+
+'''
+Better score algorithm
+Positive score is good for white
+Negative score is good for black
+'''
+def scoreBoard(gs):
+    if gs.checkmate:
+        if gs.whiteToMove:
+            return -CHECKMATE #black wins
+        else:
+            return CHECKMATE #white wins
+    elif gs.stalemate:
+        return STALEMATE
+
+    score = 0
+    for row in gs.board:
+        for square in row:
+            if square[0] == 'w':
+                score += pieceScores[square[1]]
+            elif square[0] == 'b':
+                score -= pieceScores[square[1]]
+    return score
 
 
 '''
