@@ -75,7 +75,18 @@ def main():
 
         #AI move finder
         if not gameOver and not humanTurn:
-            AIMove = AIEngine.findRandomMove(validMoves)
+            '''Random Move'''
+            # AIMove = AIEngine.findRandomMove(validMoves)
+
+            '''Greedy algorithm (one move ahead)'''
+            # AIMove = AIEngine.bestGreedyMove(gs, validMoves)
+            # if AIMove is None:
+            #     AIMove = AIEngine.findRandomMove(validMoves)
+
+            '''MinMax algorithm no recursion (two moves ahead)'''
+            AIMove = AIEngine.minMaxNoRecursion(gs, validMoves)
+            if AIMove is None:
+                AIMove = AIEngine.findRandomMove(validMoves)
             gs.makeMove(AIMove)
             moveMade = True
             animate = True
