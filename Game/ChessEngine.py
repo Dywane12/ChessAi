@@ -347,6 +347,7 @@ class GameState:
                         pawnPromotion = True
                     moves.append(Move((row, col), (row + moveAmount, col + 1), self.board, isPawnPromotion=pawnPromotion))
                 if (row + moveAmount, col + 1) == self.enpassantPossible:
+                    attackingPiece = blockingPiece = False
                     if kingRow == row:
                         if kingCol < col: #king is on the left of the pawn
                             #inside between king and pawn; outside range between pawn and border
