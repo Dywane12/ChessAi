@@ -347,7 +347,25 @@ class GameState:
                         pawnPromotion = True
                     moves.append(Move((row, col), (row + moveAmount, col + 1), self.board, isPawnPromotion=pawnPromotion))
                 if (row + moveAmount, col + 1) == self.enpassantPossible:
-                    moves.append(Move((row, col), (row + moveAmount, col + 1), self.board, isEnpassantMove=True))
+                    if kingRow == row:
+                        if kingCol < col: #king is on the left of the pawn
+                            #inside between king and pawn; outside range between pawn and border
+                            insideRange = range(kingCol + 1, col)
+                            outsideRange = range(col + 2, 8)
+                        else: #king is on the right of the pawn
+                            insideRange = range(kingCol - 1, col + 1, -1)
+                            outsideRange = range(col - 1, -1, -1)
+                        for i in insideRange:
+                            if self.board[row][i] != "--": #some other piece besides en-passant pawn is blocking
+                                blockingPiece = True
+                        for i in outsideRange:
+                            square = self.board[row][i]
+                            if square[0] == enemyColor and (square[1] == 'R' or square[1] == 'Q'): #attacking piece
+                                attackingPiece = True
+                            elif square != "--":
+                                blockingPiece = True
+                    if not attackingPiece or blockingPiece:
+                        moves.append(Move((row, col), (row + moveAmount, col + 1), self.board, isEnpassantMove=True))
 
 
     def getRookMoves(self, row, col, moves):
