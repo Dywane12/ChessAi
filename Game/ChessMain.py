@@ -1,7 +1,6 @@
 import pygame as p
-from googleapiclient.discovery import BODY_PARAMETER_DEFAULT_VALUE
-
 import ChessEngine, AIEngine
+from multiprocessing import Process, Queue
 
 BOARD_WIDTH = BOARD_HEIGHT = 512
 MOVE_LOG_PANEL_WIDTH = 250
@@ -35,6 +34,9 @@ def main():
     gameOver = False
     playerOne = True #if a human is playing white, then this will be True. If an AI is playing, then False
     playerTwo = False #same as above, but for black
+    AIThinking = False
+    moveFinderProcess = None
+    moveUndone = False
     while running:
         humanTurn = (gs.whiteToMove and playerOne) or (not gs.whiteToMove and playerTwo)
         for event in p.event.get():
@@ -42,7 +44,7 @@ def main():
                 running = False
             #mouse handler
             elif event.type == p.MOUSEBUTTONDOWN:
-                if not gameOver and humanTurn:
+                if not gameOver:
                     location = p.mouse.get_pos() #(x, y) location of mouse
                     col = location[0] // SQ_SIZE
                     row = location[1] // SQ_SIZE
@@ -52,7 +54,7 @@ def main():
                     else:
                         sqSelected = (row, col)
                         playerClicks.append(sqSelected) #append for both 1st and 2nd clicks
-                    if len(playerClicks) == 2: #after 2nd click
+                    if len(playerClicks) == 2 and humanTurn: #after 2nd click
                         move = ChessEngine.Move(playerClicks[0], playerClicks[1], gs.board)
                         print(move.getChessNotation())
                         for i in range(len(validMoves)):
@@ -71,6 +73,10 @@ def main():
                     moveMade = True
                     animate = False
                     gameOver = False
+                    if AIThinking:
+                        moveFinderProcess.terminate()
+                        AIThinking = False
+                    moveUndone = True
                 if event.key == p.K_r: #reset the board when 'r' is pressed
                     gs = ChessEngine.GameState()
                     validMoves = gs.getValidMoves()
@@ -79,39 +85,52 @@ def main():
                     moveMade = False
                     animate = False
                     gameOver = False
+                    if AIThinking:
+                        moveFinderProcess.terminate()
+                        AIThinking = False
+                    moveUndone = True
 
         #AI move finder
-        if not gameOver and not humanTurn:
-            '''Random Move'''
-            # AIMove = AIEngine.findRandomMove(validMoves)
+        if not gameOver and not humanTurn and not moveUndone:
+            if not AIThinking:
+                '''Random Move'''
+                # AIMove = AIEngine.findRandomMove(validMoves)
 
-            '''Greedy algorithm (one move ahead)'''
-            # AIMove = AIEngine.bestGreedyMove(gs, validMoves)
-            # if AIMove is None:
-            #     AIMove = AIEngine.findRandomMove(validMoves)
+                '''Greedy algorithm (one move ahead)'''
+                # AIMove = AIEngine.bestGreedyMove(gs, validMoves)
+                # if AIMove is None:
+                #     AIMove = AIEngine.findRandomMove(validMoves)
 
-            '''MinMax algorithm no recursion (two moves ahead)'''
-            # AIMove = AIEngine.minMaxNoRecursion(gs, validMoves)
-            # if AIMove is None:
-            #     AIMove = AIEngine.findRandomMove(validMoves)
+                '''MinMax algorithm no recursion (two moves ahead)'''
+                # AIMove = AIEngine.minMaxNoRecursion(gs, validMoves)
+                # if AIMove is None:
+                #     AIMove = AIEngine.findRandomMove(validMoves)
 
-            '''MinMax algorithm with recursion'''
-            # AIMove = AIEngine.findBestMoveMinMax(gs, validMoves)
-            # if AIMove is None:
-            #     AIMove = AIEngine.findRandomMove(validMoves)
+                '''MinMax algorithm with recursion'''
+                # AIMove = AIEngine.findBestMoveMinMax(gs, validMoves)
+                # if AIMove is None:
+                #     AIMove = AIEngine.findRandomMove(validMoves)
 
-            '''Nega Max algorithm without Alpha Beta Pruning'''
-            # AIMove = AIEngine.findBestMoveNegaMax(gs, validMoves)
-            # if AIMove is None:
-            #     AIMove = AIEngine.findRandomMove(validMoves)
+                '''Nega Max algorithm without Alpha Beta Pruning'''
+                # AIMove = AIEngine.findBestMoveNegaMax(gs, validMoves)
+                # if AIMove is None:
+                #     AIMove = AIEngine.findRandomMove(validMoves)
 
-            '''Nega Max algorithm with Alpha Beta Pruning'''
-            AIMove = AIEngine.findBestMoveNegaMaxAlphaBeta(gs, validMoves)
-            if AIMove is None:
-                AIMove = AIEngine.findRandomMove(validMoves)
-            gs.makeMove(AIMove)
-            moveMade = True
-            animate = True
+                '''Nega Max algorithm with Alpha Beta Pruning'''
+                AIThinking = True
+                print("thinking...")
+                returnQueue = Queue() #used to pass data between threads
+                moveFinderProcess = Process(target=AIEngine.findBestMoveNegaMaxAlphaBeta, args=(gs, validMoves, returnQueue))
+                moveFinderProcess.start() #call findBestMoveNegaMax(gs, validMoves, returnQueue)
+            if not moveFinderProcess.is_alive():
+                print("done thinking")
+                AIMove = returnQueue.get()
+                if AIMove is None:
+                    AIMove = AIEngine.findRandomMove(validMoves)
+                gs.makeMove(AIMove)
+                moveMade = True
+                animate = True
+                AIThinking = False
 
         if moveMade:
             if animate:
@@ -119,6 +138,7 @@ def main():
             validMoves = gs.getValidMoves()
             moveMade = False
             animate = False
+            moveUndone = False
 
         drawGameState(screen, gs, validMoves, sqSelected, moveLogFont)
 

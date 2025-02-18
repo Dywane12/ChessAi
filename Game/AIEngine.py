@@ -211,12 +211,12 @@ def negaMax(gs, validMoves, depth, turnMultiplier):
 '''
 Helper for Nega Max with Alpha Beta Pruning, it returns nextMove
 '''
-def findBestMoveNegaMaxAlphaBeta(gs, validMoves):
+def findBestMoveNegaMaxAlphaBeta(gs, validMoves, returnQueue):
     global nextMove
     nextMove = None
     random.shuffle(validMoves)
     negaMaxAlphaBeta(gs, validMoves, DEPTH, -CHECKMATE, CHECKMATE, 1 if gs.whiteToMove else -1)
-    return nextMove
+    returnQueue.put(nextMove)
 
 
 '''
